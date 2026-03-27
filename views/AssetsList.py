@@ -9,11 +9,12 @@ def build_table_header():
         content=ft.Row([
             ft.Text("", width=40), #icon
             ft.Text("NAME", expand=2, color="#9E9E9E", weight="bold", text_align="left", size=13),
-            ft.Text("SYMBOL", expand=1, color="#9E9E9E", weight="bold", text_align="left", size=13),
+            ft.Text("SYMBOL", expand=1, color="#9E9E9E", weight="bold", text_align="center", size=13),
             ft.Text("ISIN", expand=1, color="#9E9E9E", weight="bold", text_align="center", size=13),
             ft.Text("PRICE", expand=1, color="#9E9E9E", weight="bold", text_align="center", size=13),
             ft.Text("Δ", expand=1, color="#9E9E9E", weight="bold", text_align="center", size=13),
-            ft.Text("Δ (amount)", expand=1, color="#9E9E9E", weight="bold", text_align="center", size=13)
+            ft.Text("Δ (amount)", expand=1, color="#9E9E9E", weight="bold", text_align="center", size=13),
+            ft.Text("MARKET STATUS", expand=1, color="#9E9E9E", weight="bold", text_align="center", size=13)
         ], spacing=0)
     )
 
@@ -24,6 +25,7 @@ def build_table_row(asset):
     price_label = ft.Text(asset.price, expand=1, color="#B3B3B3", text_align="center")
     price_delta_label = ft.Text(asset.price_delta, expand=1, color="#B3B3B3", text_align="center")
     price_delta_percentage_label = ft.Text(asset.price_delta_percentage, expand=1, color="#B3B3B3", text_align="center")
+    market_status_label = ft.Text(asset.market_status, expand=1, color="#B3B3B3", text_align="center")
 
     #building the row
     asset_row_container = ft.Container(
@@ -56,11 +58,12 @@ def build_table_row(asset):
             #asset mutable labels
             price_label,
             price_delta_label,
-            price_delta_percentage_label
+            price_delta_percentage_label,
+            market_status_label,
         ], spacing=0)
     )
 
-    return asset_row_container, price_label, price_delta_label, price_delta_percentage_label
+    return asset_row_container, price_label, price_delta_label, price_delta_percentage_label, market_status_label
 
 
 def build_asset_list_view(assets):
@@ -69,12 +72,13 @@ def build_asset_list_view(assets):
     table_rows = []
     asset_price_labels = {}
     for asset in assets:
-        asset_row_container, price_label, price_delta_label, price_delta_percentage_label = build_table_row(asset)
+        asset_row_container, price_label, price_delta_label, price_delta_percentage_label, market_status = build_table_row(asset)
         table_rows.append(asset_row_container)
         asset_price_labels[asset.ticker] = {
             "price_label": price_label,
             "price_delta_label": price_delta_label,
-            "price_delta_percentage_label": price_delta_percentage_label
+            "price_delta_percentage_label": price_delta_percentage_label,
+            "market_status_label": market_status
         }
 
     #creating asset list view

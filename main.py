@@ -1,15 +1,14 @@
+
 import threading
 
 from modules.Asset import Asset
 from views import AssetsList
 import flet_charts as fch
 import flet as ft
+import asyncio
 import random
 import time
 
-#import requests
-#import json
-#import threading
 
 CANDLE_DATA = [
     (0, 24.8, 28.6, 23.9, 27.2),
@@ -74,40 +73,36 @@ def create_fast_chart():
         expand=True,
     )
 
-#def motore_prezzi(froci):
-#    time.sleep(20)
-#    print("start")
-#    while True:
-#        for f in froci:
-#            widget = froci[f]
-
-            # 2. Cambiamo il valore testuale
-#            widget.value = f"{random.randint(10, 100)}"
-
-            # 3. Opzionale: Cambiamo colore in base al movimento (effetto blink)
-            #widget.color = ft.Colors.GREEN_ACCENT
-            # 4. Fondamentale: diciamo a Flet di ridisegnare SOLO questo widget
-#            widget.update()
-
-#        time.sleep(10)
-
 #####################################################################################################
 
 
 
-def update_shit(assets, asset_price_labels):
-
+async def update_shit(assets, asset_price_labels):
     while True:
         for asset in assets:
-            dio = asset_price_labels[asset.ticker]
-            widget = dio["price_label"]
-            if widget.page:
-                print("update..")
-                asset.update_asset_price()
-                widget.value = asset.price
-                widget.update()
+            price_labels = asset_price_labels[asset.ticker]
+            price_label = price_labels["price_label"]
+            price_delta_label = price_labels["price_delta_label"]
+            price_delta_percentage_label = price_labels["price_delta_percentage_label"]
+            market_status_label = price_labels["market_status_label"]
 
-        time.sleep(10)
+            #updating asset price
+            if price_label.page and price_delta_label.page and price_delta_percentage_label.page:
+                asset.update_asset_price()
+                price_label.value = asset.price
+                price_delta_label.value = asset.price_delta
+                price_delta_label.color = ft.Colors.GREEN_ACCENT if asset.price_delta.startswith("+") else ft.Colors.RED_ACCENT
+                price_delta_percentage_label.value = asset.price_delta_percentage
+                price_delta_percentage_label.color = ft.Colors.GREEN_ACCENT if asset.price_delta_percentage.startswith("+") else ft.Colors.RED_ACCENT
+                market_status_label.value = asset.market_status
+
+                #updates on interface
+                price_label.update()
+                price_delta_label.update()
+                price_delta_percentage_label.update()
+                market_status_label.update()
+
+        await asyncio.sleep(10)
 
 
 
@@ -155,13 +150,23 @@ def main(page: ft.Page):
     )
 
     assets = [
-        Asset("Vanguard Ftse All-World Ucits E", "VWCE.MI", "IE00BK5BQT80", "vwce.png"),
-        Asset("Bitcoin", "BTC", "-", "btc.png"),
-        Asset("Tesla Inc.", "TSLA", "-", "pokemon.png")
+        Asset("Vanguard Ftse All-World Ucits E", "VWCE.MI", "IE00BK5BQT80", "vwce.png", symbol="VWCE.MI", data_provider="yfinance"),
+        Asset("Bitcoin", "BTC", "-", "btc.png", symbol="BTCEUR", data_provider="binance"),
     ]
 
     assets_list_view, asset_price_labels = AssetsList.build_asset_list_view(assets)
     main_view_container = ft.Container(content=assets_list_view, expand=True)
+
+    # Definizione del pulsante "Stupiscimi"
+    page.floating_action_button = ft.FloatingActionButton(
+        icon=ft.Icons.ADD,
+        bgcolor=ft.Colors.BLUE_ACCENT_400,
+        foreground_color=ft.Colors.WHITE,
+        shape=ft.CircleBorder(),  # Lo rendiamo perfettamente tondo
+        on_click=lambda _: print("Apertura pannello aggiunta..."),
+        tooltip="Aggiungi Asset",
+        elevation=10,  # Gli diamo profondità con l'ombra
+    )
 
     #page final view
     page.add(
@@ -170,17 +175,20 @@ def main(page: ft.Page):
             [
                 rail_container,
                 main_view_container
-
             ],
             expand=True,
             spacing=0
-        )
+        ),
     )
 
-    t = threading.Thread(target=update_shit, args=(assets, asset_price_labels))
-    t.start()
+
+    #starting the price update task
+    asyncio.create_task(update_shit(assets, asset_price_labels))
 
 
 if __name__ == "__main__":
+    #ugo = get_market_status("vwce.mi")
+    #print(ugo)
     ft.run(main=main, assets_dir="assets")
+    #ft.run(main=main, assets_dir="assets", view=ft.AppView.WEB_BROWSER)
     #res = requests.get("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCEUR")
